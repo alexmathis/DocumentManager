@@ -1,0 +1,34 @@
+version: '3.4'
+
+services:
+  documentmanager.api:
+    container_name: documentmanager-api
+    image: ${DOCKER_REGISTRY-}documentmanagerapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - MSSQL_SA_PASSWORD=Password1*
+      - AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeLLfVJk1LFur7G/UgRPhPdUqU1qPUjl8HBpRIRpSqxkyl2KpUblcxyH4vBL+ErRXxIknYw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
+    build:
+      context: .
+      dockerfile: DocumentManager.API/Dockerfile
+    depends_on:
+      - sqlserver    
+      - azurite  
+
+  sqlserver:
+    container_name: sqlserver
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Password1*
+    volumes:
+      - "./data/:/var/opt/mssql/data/"
+    ports:
+      - "1433:1433"
+
+  azurite:
+    container_name: azurite
+    image: mcr.microsoft.com/azure-storage/azurite
+    ports:
+      - "10000:10000"
+    command: "azurite-blob --blobHost 0.0.0.0"
