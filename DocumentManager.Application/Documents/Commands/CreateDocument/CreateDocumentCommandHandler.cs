@@ -52,9 +52,9 @@ public class CreateDocumentCommandHandler : ICommandHandler<CreateDocumentComman
             organizationId: request.OrganizationId
         );
 
-        _documentRepository.Insert(document);
+        var newDocumentId = await _documentRepository.Insert(document);
 
-        var auditLog = AuditLog.Create(document.Id, request.UserId, "Created");
+        var auditLog = AuditLog.Create(newDocumentId, request.UserId, "Created");
         _auditLogRepository.Insert(auditLog);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

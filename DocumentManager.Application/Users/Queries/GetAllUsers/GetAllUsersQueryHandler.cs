@@ -18,7 +18,7 @@ internal sealed class GetAllUsersQueryHandler : IQueryHandler<GetAllUsersQuery, 
     {
         // First, fetch the organization of the requesting user
         var orgSql = @"SELECT OrganizationId FROM Users WHERE Id = @RequestingUserId";
-        var organizationId = await _dbConnection.QueryFirstOrDefaultAsync<int?>(orgSql, new { request.RequstingUserId });
+        var organizationId = await _dbConnection.QueryFirstOrDefaultAsync<int?>(orgSql, new { request.RequestingUserId });
 
         if (organizationId == null)
         {

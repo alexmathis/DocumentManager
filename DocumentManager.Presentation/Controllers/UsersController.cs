@@ -15,7 +15,7 @@ public class UsersController : ApiController
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetUserById(int id, [FromHeader(Name = "X-User-Id")] int userId)
+    public async Task<IActionResult> GetUserById(int id, [FromHeader(Name = "X-UserId")] int userId)
     {
         var query = new GetUserByIdQuery(id, userId);
 
@@ -26,7 +26,7 @@ public class UsersController : ApiController
 
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<UserResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll([FromHeader(Name = "X-User-Id")] int userId)
+    public async Task<IActionResult> GetAll([FromHeader(Name = "X-UserId")] int userId)
     {
         var users = await Sender.Send(new GetAllUsersQuery(userId));
         return Ok(users);
@@ -35,16 +35,16 @@ public class UsersController : ApiController
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateUserRequest request, [FromHeader(Name = "X-User-Id")] int userId)
+    public async Task<IActionResult> Create([FromBody] CreateUserRequest request, [FromHeader(Name = "X-UserId")] int userId)
     {
-        var command = new CreateUserCommand(request.Email, userId);
+        var command = new CreateUserCommand(request.Email,request.OrganizationId, userId);
         var newUserId = await Sender.Send(command);
 
         return CreatedAtAction(nameof(GetUserById), new { id = newUserId }, newUserId);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request, [FromHeader(Name = "X-User-Id")] int userId)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request, [FromHeader(Name = "X-UserId")] int userId)
     {
         var command = new UpdateUserCommand(id, request.Email, request.OrganizationId, userId);
 
@@ -53,7 +53,7 @@ public class UsersController : ApiController
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id, [FromHeader(Name = "X-User-Id")] int userId)
+    public async Task<IActionResult> Delete(int id, [FromHeader(Name = "X-UserId")] int userId)
     {
         var command = new DeleteUserCommand(id, userId);
 

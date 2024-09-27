@@ -6,7 +6,7 @@ public sealed class GetAllUsersQueryValidator : AbstractValidator<GetAllUsersQue
 {
     public GetAllUsersQueryValidator()
     {
-        RuleFor(x => x.RequstingUserId)
+        RuleFor(x => x.RequestingUserId)
             .GreaterThan(0).WithMessage("Requesting user ID must be a positive integer.");
     }
 }

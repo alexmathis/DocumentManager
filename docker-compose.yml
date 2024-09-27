@@ -11,17 +11,21 @@ services:
       - sql_data:/var/lib/data
     ports:
       - "1433:1433"
+    networks:
+      - mynetwork
 
   azurite:
     container_name: azurite
     image: mcr.microsoft.com/azure-storage/azurite
     ports:
-      - "10000:10000"  # Blob storage
-      - "10001:10001"  # Queue storage (if needed)
-      - "10002:10002"  # Table storage (if needed)
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
     volumes:
       - azurite_data:/data
     command: "azurite-blob --blobHost 0.0.0.0 --location /data --debug /data/debug.log"
+    networks:
+      - mynetwork
 
   documentmanager.api:
     container_name: documentmanager-api
@@ -31,8 +35,8 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=DocumentManagerDB;User Id=sa;Password=Password1*;TrustServerCertificate=True;
-      - AzureBlobStorage__ConnectionString=UseDevelopmentStorage=true  # Local Azurite connection string
-      - AzureBlobStorage__BlobServiceUrl=http://azurite:10000/devstoreaccount1  # Azurite blob service URL
+      - AzureBlobStorage__ConnectionString=UseDevelopmentStorage=true
+      - AzureBlobStorage__BlobServiceUrl=http://azurite:10000/devstoreaccount1
     ports:
       - "5000:80"
       - "5001:443"
@@ -40,7 +44,13 @@ services:
       - sqlserver
       - azurite
     entrypoint: ["dotnet", "DocumentManager.API.dll"]
+    networks:
+      - mynetwork
 
 volumes:
   sql_data:
   azurite_data:
+
+networks:
+  mynetwork:
+    driver: bridge

@@ -2,4 +2,4 @@
 
 namespace DocumentManager.Application.Users.Commands.CreateUser;
 
-public sealed record CreateUserCommand(string Email, int OrganizationId) : ICommand<int>;
+public sealed record CreateUserCommand(string Email, int OrganizationId, int creatingUserId) : ICommand<int>;

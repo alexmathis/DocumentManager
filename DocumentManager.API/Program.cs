@@ -4,16 +4,13 @@ using DocumentManager.Domain.Abstractions;
 using DocumentManager.Domain.Interfaces;
 using DocumentManager.Infrastructure;
 using DocumentManager.Infrastructure.Persistence.Repositories;
-//.using DocumentManager.Infrastructure.Services;
+using DocumentManager.Infrastructure.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
 using System.Data;
-using System.Reflection;
-using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,13 +44,6 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
 {
-    //var presentationDocumentationFile = $"{presentationAssembly.GetName().Name}.xml";
-
-    //var presentationDocumentationFilePath =
-    //    Path.Combine(AppContext.BaseDirectory, presentationDocumentationFile);
-
-    //c.IncludeXmlComments(presentationDocumentationFilePath);
-
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "DocumentManager.API", Version = "v1" });
 });
 
@@ -74,6 +64,7 @@ builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 //builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IFileStorageService, MockAzureFileStorageService>();
 
 builder.Services.AddScoped<IDbConnection>(provider =>
 {

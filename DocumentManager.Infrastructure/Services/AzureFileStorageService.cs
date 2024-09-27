@@ -2,6 +2,7 @@
 using Azure.Storage.Blobs.Models;
 using DocumentManager.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,8 +13,10 @@ namespace DocumentManager.Infrastructure.Services
     {
         private readonly BlobServiceClient _blobServiceClient;
 
-        public FileStorageService(string connectionString)
+        public FileStorageService(IConfiguration configuration)
         {
+            // Use the indexer to get the connection string from configuration
+            var connectionString = configuration["AzureBlobStorage:ConnectionString"];
             _blobServiceClient = new BlobServiceClient(connectionString);
         }
 

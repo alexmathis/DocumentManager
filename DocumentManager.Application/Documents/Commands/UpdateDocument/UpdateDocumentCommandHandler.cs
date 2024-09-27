@@ -73,7 +73,7 @@ public class UpdateDocumentCommandHandler : ICommandHandler<UpdateDocumentComman
 
         _documentRepository.Update(document);
 
-        var auditLog = AuditLog.Create(document.Id, request.EditingUserId, "Updated");
+        var auditLog = AuditLog.Create(request.Id, request.EditingUserId, "Updated");
         _auditLogRepository.Insert(auditLog);
 
 

@@ -51,7 +51,7 @@ public class OrganizationsController : ApiController
     public async Task<IActionResult> Create([FromBody] CreateOrganizationRequest request, [FromHeader(Name = "X-UserId")] int userId)
     {
     
-        var command = request.Adapt<CreateOrganizationCommand>();
+        var command = new CreateOrganizationCommand(request.Name, userId);
         var organizationId = await Sender.Send(command);
 
         return CreatedAtAction(nameof(GetById), new { id = organizationId }, organizationId);
