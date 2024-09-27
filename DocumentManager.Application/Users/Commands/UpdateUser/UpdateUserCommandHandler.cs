@@ -1,37 +1,49 @@
-﻿using DocumentManager.Domain.Interfaces;
-using MediatR;
+﻿using DocumentManager.Application.Abstractions.Messaging;
+using DocumentManager.Domain.Abstractions;
+using DocumentManager.Domain.Exceptions;
+using DocumentManager.Domain.Interfaces;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DocumentManager.Application.Users.Commands.UpdateUser;
 
-public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Unit>
+public class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand, Unit>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateUserCommandHandler(IUserRepository userRepository)
+    public UpdateUserCommandHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
     {
         _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Unit> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
     {
-        // Retrieve the user by Id
         var user = await _userRepository.GetByIdAsync(request.Id);
-
         if (user == null)
         {
-            throw new KeyNotFoundException($"User with Id {request.Id} not found.");
+            throw new UserNotFoundException(request.Id);
         }
 
-        // Update the user's email and organization ID using the new methods
+        var requestingUser = await _userRepository.GetByIdAsync(request.RequestingUserId);
+        if (requestingUser == null)
+        {
+            throw new UserNotFoundException(request.RequestingUserId);
+        }
+
+        if (requestingUser.Id != user.Id && requestingUser.OrganizationId != user.OrganizationId)
+        {
+            throw new UnauthorizedAccessException("You do not have permission to update this user.");
+        }
+
         user.UpdateEmail(request.Email);
         user.UpdateOrganizationId(request.OrganizationId);
 
-        // Update the user in the repository
         _userRepository.Update(user);
 
-        // Save changes to the database
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Unit.Value; // Return Unit to indicate success
+        return Unit.Value;
     }
 }

@@ -1,21 +1,27 @@
-﻿using DocumentManager.Domain.Entities;
+﻿using Dapper;
+using DocumentManager.Application.Abstractions.Messaging;
+using DocumentManager.Application.Organizations.Queries.GetOrganizationById;
+using DocumentManager.Application.Users.Queries.GetOrganizationById;
+using DocumentManager.Domain.Entities;
+using DocumentManager.Domain.Exceptions;
 using DocumentManager.Domain.Interfaces;
 using MediatR;
+using System.Data;
 
 namespace DocumentManager.Application.Organizations.Queries.GetAllOrganizations;
 
-public class GetAllOrganizationsQueryHandler : IRequestHandler<GetAllOrganizationsQuery, IEnumerable<Organization>>
+internal sealed class GetAllOrganizationsQueryHandler : IQueryHandler<GetAllOrganizationsQuery, IEnumerable<OrganizationResponse>>
 {
-    private readonly IOrganizationRepository _organizationRepository;
+    private readonly IDbConnection _dbConnection;
+    public GetAllOrganizationsQueryHandler(IDbConnection dbConnection) => _dbConnection = dbConnection;
 
-    public GetAllOrganizationsQueryHandler(IOrganizationRepository organizationRepository)
-    {
-        _organizationRepository = organizationRepository;
-    }
 
-    public async Task<IEnumerable<Organization>> Handle(GetAllOrganizationsQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<OrganizationResponse>> Handle(GetAllOrganizationsQuery request, CancellationToken cancellationToken)
     {
-        // Retrieve all organizations
-        return await _organizationRepository.GetAllAsync();
+        var sql = $"SELECT {nameof(OrganizationResponse.Id)}, {nameof(OrganizationResponse.Name)}  FROM Organizations";
+
+        var organizations = await _dbConnection.QueryAsync<OrganizationResponse>(sql);
+
+        return organizations;
     }
 }

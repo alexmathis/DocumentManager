@@ -1,10 +1,6 @@
-﻿using DocumentManager.Domain.Entities;
-using MediatR;
-
+﻿using DocumentManager.Application.Abstractions.Messaging;
+using DocumentManager.Domain.Entities;
 
 namespace DocumentManager.Application.Users.Queries.GetUserById;
 
-public class GetUserByIdQuery : IRequest<User?>
-{
-    public int Id { get; set; }
-}
+public sealed record GetUserByIdQuery(int Id, int RequstingUserId) : IQuery<UserResponse>;

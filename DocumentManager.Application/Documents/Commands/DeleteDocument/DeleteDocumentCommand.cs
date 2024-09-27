@@ -1,13 +1,6 @@
-﻿using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DocumentManager.Application.Abstractions.Messaging;
+
 
 namespace DocumentManager.Application.Documents.Commands.DeleteDocument;
 
-public class DeleteDocumentCommand : IRequest<Unit>  // Unit represents a void type
-{
-    public int Id { get; set; }
-}
+public sealed record DeleteDocumentCommand(int Id, int DeletingUserId) : ICommand<Unit>;

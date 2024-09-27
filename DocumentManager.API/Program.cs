@@ -10,6 +10,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.OpenApi.Models;
 using System.Data;
 using System.Reflection;
 using static System.Net.Mime.MediaTypeNames;
@@ -21,6 +22,18 @@ var presentationAssembly = typeof(DocumentManager.Presentation.AssemblyReference
 builder.Services.AddControllers().PartManager.ApplicationParts.Add(new AssemblyPart(presentationAssembly));
 
 
+// Enable CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigins",
+        builder =>
+        {
+            builder.AllowAnyOrigin() 
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
+});
+
 var applicationAssembly = typeof(DocumentManager.Application.AssemblyReference).Assembly;
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(applicationAssembly));
@@ -31,7 +44,18 @@ builder.Services.AddValidatorsFromAssembly(applicationAssembly);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    //var presentationDocumentationFile = $"{presentationAssembly.GetName().Name}.xml";
+
+    //var presentationDocumentationFilePath =
+    //    Path.Combine(AppContext.BaseDirectory, presentationDocumentationFile);
+
+    //c.IncludeXmlComments(presentationDocumentationFilePath);
+
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "DocumentManager.API", Version = "v1" });
+});
 
 
 
@@ -51,9 +75,6 @@ builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
 //builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
-builder.Services.AddScoped<IUnitOfWork>(
-    factory => factory.GetRequiredService<ApplicationDbContext>());
-
 builder.Services.AddScoped<IDbConnection>(provider =>
 {
     var dbContext = provider.GetRequiredService<ApplicationDbContext>();
@@ -69,13 +90,34 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "DocumentManager.API"));
 }
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseCors("AllowSpecificOrigins");
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
 app.UseAuthorization();
 
-app.MapControllers();
+app.UseEndpoints(endpoints => endpoints.MapControllers());
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    try
+    {
+        db.Database.Migrate();
+        Console.WriteLine("Database migration completed successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"An error occurred while migrating the database: {ex.Message}");
+    }
+}
 
 app.Run();

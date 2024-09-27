@@ -1,8 +1,5 @@
-﻿using MediatR;
-
+﻿using DocumentManager.Application.Abstractions.Messaging;
 
 namespace DocumentManager.Application.Organizations.Commands.DeleteOrganization;
-public class DeleteOrganizationCommand : IRequest<Unit>  // Returns Unit for delete
-{
-    public int Id { get; set; }
-}
+public sealed record  DeleteOrganizationCommand(int Id, int DeletingUserId) : ICommand<Unit>;  
+

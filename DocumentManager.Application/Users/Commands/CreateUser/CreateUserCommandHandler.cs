@@ -1,34 +1,32 @@
-﻿using DocumentManager.Domain.Entities;
+﻿using DocumentManager.Application.Abstractions.Messaging;
+using DocumentManager.Domain.Abstractions;
+using DocumentManager.Domain.Entities;
 using DocumentManager.Domain.Interfaces;
-using MediatR;
 
 
 namespace DocumentManager.Application.Users.Commands.CreateUser;
 
-public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, int>
+public class CreateUserCommandHandler : ICommandHandler<CreateUserCommand, int>
 {
     private readonly IUserRepository _userRepository;
-
-    public CreateUserCommandHandler(IUserRepository userRepository)
+    private readonly IUnitOfWork _unitOfWork;
+    public CreateUserCommandHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
     {
         _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<int> Handle(CreateUserCommand request, CancellationToken cancellationToken)
     {
-        // Use the factory method to create a new User
         var user = User.Create(
             email: request.Email,
             organizationId: request.OrganizationId
         );
 
-        // Insert the user into the repository
         _userRepository.Insert(user);
 
-        // Save changes to the database
-        await _userRepository.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync();
 
-        // Return the newly created user's ID
         return user.Id;
     }
 }

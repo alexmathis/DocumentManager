@@ -1,41 +1,40 @@
-﻿using DocumentManager.Domain.Interfaces;
-using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DocumentManager.Application.Abstractions.Messaging;
+using DocumentManager.Domain.Abstractions;
+using DocumentManager.Domain.Exceptions;
+using DocumentManager.Domain.Interfaces;
+
 
 namespace DocumentManager.Application.Organizations.Commands.UpdateOrganization;
 
-public class UpdateOrganizationCommandHandler : IRequestHandler<UpdateOrganizationCommand, Unit>
+public class UpdateOrganizationCommandHandler : ICommandHandler<UpdateOrganizationCommand, Unit>
 {
     private readonly IOrganizationRepository _organizationRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateOrganizationCommandHandler(IOrganizationRepository organizationRepository)
+    public UpdateOrganizationCommandHandler(IOrganizationRepository organizationRepository, IUnitOfWork unitOfWork)
     {
         _organizationRepository = organizationRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Unit> Handle(UpdateOrganizationCommand request, CancellationToken cancellationToken)
     {
-        // Retrieve the organization by Id
+    
         var organization = await _organizationRepository.GetByIdAsync(request.Id);
 
         if (organization == null)
         {
-            throw new KeyNotFoundException($"Organization with Id {request.Id} not found.");
+            throw new OrganizationNotFoundException(request.Id);
         }
-
-        // Update the organization's name using the provided public method
+  
         organization.UpdateName(request.Name);
 
-        // Update the organization in the repository
+       
         _organizationRepository.Update(organization);
 
-        // Save changes to the database
-        await _organizationRepository.SaveChangesAsync();
+       
+        await _unitOfWork.SaveChangesAsync();
 
-        return Unit.Value; // Return Unit to indicate success
+        return Unit.Value; 
     }
 }

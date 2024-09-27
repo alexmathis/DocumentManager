@@ -3,83 +3,55 @@ using DocumentManager.Application.Documents.Commands.DeleteDocument;
 using DocumentManager.Application.Documents.Commands.UpdateDocument;
 using DocumentManager.Application.Documents.Queries.GetAllDocuments;
 using DocumentManager.Application.Documents.Queries.GetDocumentById;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using DocumentManager.Presentation.Controllers;
 
 namespace Document_Manager.Presentation.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class DocumentsController : ControllerBase
+public class DocumentsController : ApiController
 {
-    private readonly IMediator _mediator;
-
-    public DocumentsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
-    // GET: api/documents/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, [FromHeader(Name = "X-UserId")] int userId)
     {
-        var document = await _mediator.Send(new GetDocumentByIdQuery { Id = id });
-
-        if (document == null)
-        {
-            return NotFound();
-        }
-
+        var document = await Sender.Send(new GetDocumentByIdQuery(id, userId));
         return Ok(document);
     }
 
-    // GET: api/documents
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromHeader(Name = "X-UserId")] int userId)
     {
-        var documents = await _mediator.Send(new GetAllDocumentsQuery());
+        var documents = await Sender.Send(new GetAllDocumentsQuery(userId));
         return Ok(documents);
     }
 
-    // POST: api/documents
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateDocumentCommand command)
+    public async Task<IActionResult> Create([FromForm] CreateDocumentRequest request, [FromHeader(Name = "X-UserId")] int userId)
     {
-        if (!ModelState.IsValid)
+        if (userId != request.UserId)
         {
-            return BadRequest(ModelState);
+            return BadRequest("The document creator does not match the logged-in user.");
         }
 
-        var documentId = await _mediator.Send(command);
+        var command = new CreateDocumentCommand(request.Name, request.File, request.UserId, request.OrganizationId);
+        var documentId = await Sender.Send(command);
 
         return CreatedAtAction(nameof(GetById), new { id = documentId }, documentId);
     }
 
-    // PUT: api/documents/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateDocumentCommand command)
+    public async Task<IActionResult> Update(int id, [FromForm] UpdateDocumentRequest request, [FromHeader(Name = "X-UserId")] int userId)
     {
-        if (id != command.Id)
-        {
-            return BadRequest("The document ID in the URL doesn't match the ID in the body.");
-        }
+        var command = new UpdateDocumentCommand(id, request.Name, request.File, userId);
+        await Sender.Send(command);
 
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
-        await _mediator.Send(command);
         return NoContent();
     }
 
-    // DELETE: api/documents/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, [FromHeader(Name = "X-UserId")] int userId)
     {
-        var command = new DeleteDocumentCommand { Id = id };
-
-        await _mediator.Send(command);
+        var command = new DeleteDocumentCommand(id, userId);
+        await Sender.Send(command);
 
         return NoContent();
     }

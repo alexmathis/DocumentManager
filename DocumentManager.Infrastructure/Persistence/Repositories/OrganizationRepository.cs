@@ -17,8 +17,8 @@ namespace DocumentManager.Infrastructure.Persistence.Repositories;
         {
 
         return await _dbContext.Set<Organization>()
-                                   .Include(o => o.Users)  // Optional: Include related Users if needed
-                                   .Include(o => o.Documents) // Optional: Include related Documents if needed
+                                   .Include(o => o.Users)  
+                                   .Include(o => o.Documents) 
                                    .FirstOrDefaultAsync(o => o.Id == id);
 
         }

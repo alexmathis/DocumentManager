@@ -1,6 +1,4 @@
-﻿using DocumentManager.Domain.Primatives;
-
-namespace DocumentManager.Domain.Entities;
+﻿namespace DocumentManager.Domain.Entities;
 public sealed class User
 {
     // Private constructor for factory use and EF Core

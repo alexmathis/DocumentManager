@@ -1,8 +1,6 @@
-﻿using DocumentManager.Domain.Primatives;
+﻿namespace DocumentManager.Domain.Entities;
 
-namespace DocumentManager.Domain.Entities;
-
-public sealed class Organization: Entity
+public sealed class Organization
 {
     // Private constructor for EF Core and factory method usage
     private Organization(string name)

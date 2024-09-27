@@ -1,86 +1,82 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MediatR;
 using DocumentManager.Application.Organizations.Queries.GetOrganizationById;
 using DocumentManager.Application.Organizations.Queries.GetAllOrganizations;
 using DocumentManager.Application.Organizations.Commands.CreateOrganization;
 using DocumentManager.Application.Organizations.Commands.UpdateOrganization;
 using DocumentManager.Application.Organizations.Commands.DeleteOrganization;
+using DocumentManager.Presentation.Controllers;
+using DocumentManager.Application.Users.Queries.GetUserById;
+using Microsoft.AspNetCore.Http;
+using Mapster;
+using DocumentManager.Application.Users.Queries.GetOrganizationById;
+
+
+
 namespace Document_Manager.Presentation.Controllers;
 
-    [ApiController]
-    [Route("api/[controller]")]
-    public class OrganizationController : ControllerBase
+public class OrganizationsController : ApiController
+{
+
+    [HttpGet("{id}")]
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(int id, [FromHeader(Name = "X-UserId")] int userId)
     {
-        private readonly IMediator _mediator;
-
-        public OrganizationController(IMediator mediator)
+        if (userId <= 0)
         {
-            _mediator = mediator;
+            return BadRequest("Authorized user required.");
         }
 
-        // GET: api/organization/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var organization = await _mediator.Send(new GetOrganizationByIdQuery { Id = id });
+        var organization = await Sender.Send(new GetOrganizationByIdQuery(id));
 
-            if (organization == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(organization);
-        }
-
-        // GET: api/organization
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var organizations = await _mediator.Send(new GetAllOrganizationsQuery());
-            return Ok(organizations);
-        }
-
-        // POST: api/organization
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateOrganizationCommand command)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var organizationId = await _mediator.Send(command);
-
-            return CreatedAtAction(nameof(GetById), new { id = organizationId }, organizationId);
-        }
-
-        // PUT: api/organization/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateOrganizationCommand command)
-        {
-            if (id != command.Id)
-            {
-                return BadRequest("The organization ID in the URL doesn't match the ID in the body.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            await _mediator.Send(command);
-            return NoContent();
-        }
-
-        // DELETE: api/organization/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var command = new DeleteOrganizationCommand { Id = id };
-
-            await _mediator.Send(command);
-
-            return NoContent();
-        }
+        return Ok(organization);
     }
+
+
+    [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<OrganizationResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll([FromHeader(Name = "X-UserId")] int userId)
+    {
+        if (userId <= 0)
+        {
+            return BadRequest("Authorized user required.");
+        }
+
+        var organizations = await Sender.Send(new GetAllOrganizationsQuery());
+        return Ok(organizations);
+    }
+
+
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateOrganizationRequest request, [FromHeader(Name = "X-UserId")] int userId)
+    {
+    
+        var command = request.Adapt<CreateOrganizationCommand>();
+        var organizationId = await Sender.Send(command);
+
+        return CreatedAtAction(nameof(GetById), new { id = organizationId }, organizationId);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateOrganizationRequest request, [FromHeader(Name = "X-UserId")] int userId)
+    {
+
+        var command = new UpdateOrganizationCommand(id, request.Name, userId);
+
+        await Sender.Send(command);
+
+        return NoContent();
+    }
+
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id, [FromHeader(Name = "X-UserId")] int userId)
+    {
+        var command = new DeleteOrganizationCommand(id, userId);
+
+        await Sender.Send(command);
+
+        return NoContent();
+    }
+}
 

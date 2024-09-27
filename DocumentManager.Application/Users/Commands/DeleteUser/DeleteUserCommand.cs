@@ -1,9 +1,6 @@
-﻿using MediatR;
+﻿using DocumentManager.Application.Abstractions.Messaging;
 
 
 namespace DocumentManager.Application.Users.Commands.DeleteUser;
 
-public class DeleteUserCommand : IRequest<Unit>  // Returns Unit for delete
-{
-    public int Id { get; set; }
-}
+public sealed record DeleteUserCommand(int Id, int RequestingUserId) : ICommand<Unit>;  

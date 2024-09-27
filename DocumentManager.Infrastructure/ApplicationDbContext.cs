@@ -1,4 +1,5 @@
 ﻿using DocumentManager.Domain.Abstractions;
+using DocumentManager.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -11,7 +12,7 @@ namespace DocumentManager.Infrastructure;
         {
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder) =>
+    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 

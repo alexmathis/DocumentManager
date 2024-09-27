@@ -3,83 +3,61 @@ using DocumentManager.Application.Users.Commands.DeleteUser;
 using DocumentManager.Application.Users.Commands.UpdateUser;
 using DocumentManager.Application.Users.Queries.GetAllUsers;
 using DocumentManager.Application.Users.Queries.GetUserById;
-using MediatR;
+using DocumentManager.Presentation.Controllers;
+using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Document_Manager.Presentation.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class UserController : ControllerBase
+public class UsersController : ApiController
 {
-    private readonly IMediator _mediator;
-
-    public UserController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
-    // GET: api/users/{id}
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUserById(int id, [FromHeader(Name = "X-User-Id")] int userId)
     {
-        var user = await _mediator.Send(new GetUserByIdQuery { Id = id });
+        var query = new GetUserByIdQuery(id, userId);
 
-        if (user == null)
-        {
-            return NotFound();
-        }
+        var user = await Sender.Send(query);
 
         return Ok(user);
     }
 
-    // GET: api/users
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    [ProducesResponseType(typeof(IEnumerable<UserResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll([FromHeader(Name = "X-User-Id")] int userId)
     {
-        var users = await _mediator.Send(new GetAllUsersQuery());
+        var users = await Sender.Send(new GetAllUsersQuery(userId));
         return Ok(users);
     }
 
-    // POST: api/users
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateUserCommand command)
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Create([FromBody] CreateUserRequest request, [FromHeader(Name = "X-User-Id")] int userId)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+        var command = new CreateUserCommand(request.Email, userId);
+        var newUserId = await Sender.Send(command);
 
-        var userId = await _mediator.Send(command);
-
-        return CreatedAtAction(nameof(GetById), new { id = userId }, userId);
+        return CreatedAtAction(nameof(GetUserById), new { id = newUserId }, newUserId);
     }
 
-    // PUT: api/users/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateUserCommand command)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateUserRequest request, [FromHeader(Name = "X-User-Id")] int userId)
     {
-        if (id != command.Id)
-        {
-            return BadRequest("The user ID in the URL doesn't match the ID in the body.");
-        }
+        var command = new UpdateUserCommand(id, request.Email, request.OrganizationId, userId);
 
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
-        await _mediator.Send(command);
+        await Sender.Send(command);
         return NoContent();
     }
 
-    // DELETE: api/users/{id}
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, [FromHeader(Name = "X-User-Id")] int userId)
     {
-        var command = new DeleteUserCommand { Id = id };
+        var command = new DeleteUserCommand(id, userId);
 
-        await _mediator.Send(command);
+        await Sender.Send(command);
 
         return NoContent();
     }

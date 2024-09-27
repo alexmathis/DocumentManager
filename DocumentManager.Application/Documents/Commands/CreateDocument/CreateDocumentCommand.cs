@@ -1,13 +1,8 @@
-﻿using MediatR;
-
+﻿using DocumentManager.Application.Abstractions.Messaging;
+using Microsoft.AspNetCore.Http;
 
 namespace DocumentManager.Application.Documents.Commands.CreateDocument;
 
-public class CreateDocumentCommand : IRequest<int>  // Returns the created Document's Id
-{
-    public string Name { get; set; }
-    public int Size { get; set; }
-    public string StoragePath { get; set; }
-    public int UserId { get; set; }
-    public int OrganizationId { get; set; }
-}
+public sealed record CreateDocumentCommand(string Name, IFormFile File, int UserId, int OrganizationId) : ICommand<int>;
+
+

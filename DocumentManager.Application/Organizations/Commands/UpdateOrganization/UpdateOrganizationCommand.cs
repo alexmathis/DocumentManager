@@ -1,10 +1,6 @@
-﻿using MediatR;
-
+﻿using DocumentManager.Application.Abstractions.Messaging;
 
 namespace DocumentManager.Application.Organizations.Commands.UpdateOrganization;
-public class UpdateOrganizationCommand : IRequest<Unit>  // Unit is equivalent to void
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-}
+public sealed record UpdateOrganizationCommand(int Id, string Name, int UpdatingUserId) : ICommand<Unit>;
+
 

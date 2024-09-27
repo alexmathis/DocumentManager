@@ -1,11 +1,4 @@
-﻿using MediatR;
+﻿using DocumentManager.Application.Abstractions.Messaging;
+using Microsoft.AspNetCore.Http;
 
-namespace DocumentManager.Application.Documents.Commands.UpdateDocument;
-
-public class UpdateDocumentCommand : IRequest<Unit>  // Unit is equivalent to void
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public int Size { get; set; }
-    public string StoragePath { get; set; }
-}
+public sealed record UpdateDocumentCommand(int Id, string Name, IFormFile? File, int EditingUserId) : ICommand<Unit>;

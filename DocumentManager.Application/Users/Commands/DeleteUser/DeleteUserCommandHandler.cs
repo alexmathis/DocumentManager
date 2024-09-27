@@ -1,34 +1,47 @@
-﻿using DocumentManager.Domain.Interfaces;
-using MediatR;
-
+﻿using DocumentManager.Application.Abstractions.Messaging;
+using DocumentManager.Domain.Abstractions;
+using DocumentManager.Domain.Exceptions;
+using DocumentManager.Domain.Interfaces;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DocumentManager.Application.Users.Commands.DeleteUser;
 
-public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand, Unit>
+public class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand, Unit>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public DeleteUserCommandHandler(IUserRepository userRepository)
+    public DeleteUserCommandHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
     {
         _userRepository = userRepository;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task<Unit> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
+    public async Task<Unit> Handle(DeleteUserCommand command, CancellationToken cancellationToken)
     {
-        // Retrieve the user by Id
-        var user = await _userRepository.GetByIdAsync(request.Id);
-
+        var user = await _userRepository.GetByIdAsync(command.Id);
         if (user == null)
         {
-            throw new KeyNotFoundException($"User with Id {request.Id} not found.");
+            throw new UserNotFoundException(command.Id);
         }
 
-        // Delete the user
+        var requestingUser = await _userRepository.GetByIdAsync(command.RequestingUserId);
+        if (requestingUser == null)
+        {
+            throw new UserNotFoundException(command.RequestingUserId);
+        }
+
+        if (requestingUser.Id != user.Id && requestingUser.OrganizationId != user.OrganizationId)
+        {
+            throw new UnauthorizedAccessException("You do not have permission to delete this user.");
+        }
+
         _userRepository.Delete(user);
 
-        // Save changes to the database
-        await _userRepository.SaveChangesAsync();
+        // Save changes using Unit of Work with cancellation token
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Unit.Value; // Return Unit to indicate success
+        return Unit.Value;
     }
 }

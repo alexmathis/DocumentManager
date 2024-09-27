@@ -1,9 +1,5 @@
-﻿using MediatR;
+﻿using DocumentManager.Application.Abstractions.Messaging;
 
 namespace DocumentManager.Application.Users.Commands.CreateUser;
 
-public class CreateUserCommand : IRequest<int>  // Returns the created User's Id
-{
-    public string Email { get; set; }
-    public int OrganizationId { get; set; }
-}
+public sealed record CreateUserCommand(string Email, int OrganizationId) : ICommand<int>;

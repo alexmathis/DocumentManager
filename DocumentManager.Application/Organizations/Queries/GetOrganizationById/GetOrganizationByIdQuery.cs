@@ -1,10 +1,7 @@
-﻿using DocumentManager.Domain.Entities;
-using MediatR;
-
+﻿using DocumentManager.Application.Abstractions.Messaging;
+using DocumentManager.Application.Users.Queries.GetOrganizationById;
 
 namespace DocumentManager.Application.Organizations.Queries.GetOrganizationById;
-public class GetOrganizationByIdQuery : IRequest<Organization?>
-{
-    public int Id { get; set; }
-}
+public sealed record GetOrganizationByIdQuery(int Id) : IQuery<OrganizationResponse>;
+
 

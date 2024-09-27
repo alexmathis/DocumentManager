@@ -1,9 +1,5 @@
-﻿using DocumentManager.Domain.Entities;
-using MediatR;
-
+﻿using DocumentManager.Application.Abstractions.Messaging;
 
 namespace DocumentManager.Application.Documents.Queries.GetDocumentById;
-public class GetDocumentByIdQuery : IRequest<Document?>
-{
-    public int Id { get; set; }
-}
+
+public sealed record GetDocumentByIdQuery(int Id, int UserId) : IQuery<DocumentResponse>;

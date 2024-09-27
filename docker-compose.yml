@@ -1,20 +1,6 @@
-version: '3.4'
+version: '3.8'
 
 services:
-  documentmanager.api:
-    container_name: documentmanager-api
-    image: ${DOCKER_REGISTRY-}documentmanagerapi
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - MSSQL_SA_PASSWORD=Password1*
-      - AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFeLLfVJk1LFur7G/UgRPhPdUqU1qPUjl8HBpRIRpSqxkyl2KpUblcxyH4vBL+ErRXxIknYw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
-    build:
-      context: .
-      dockerfile: DocumentManager.API/Dockerfile
-    depends_on:
-      - sqlserver    
-      - azurite  
-
   sqlserver:
     container_name: sqlserver
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -22,7 +8,7 @@ services:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=Password1*
     volumes:
-      - "./data/:/var/opt/mssql/data/"
+      - sql_data:/var/lib/data
     ports:
       - "1433:1433"
 
@@ -30,5 +16,31 @@ services:
     container_name: azurite
     image: mcr.microsoft.com/azure-storage/azurite
     ports:
-      - "10000:10000"
-    command: "azurite-blob --blobHost 0.0.0.0"
+      - "10000:10000"  # Blob storage
+      - "10001:10001"  # Queue storage (if needed)
+      - "10002:10002"  # Table storage (if needed)
+    volumes:
+      - azurite_data:/data
+    command: "azurite-blob --blobHost 0.0.0.0 --location /data --debug /data/debug.log"
+
+  documentmanager.api:
+    container_name: documentmanager-api
+    build:
+      context: .
+      dockerfile: DocumentManager.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=DocumentManagerDB;User Id=sa;Password=Password1*;TrustServerCertificate=True;
+      - AzureBlobStorage__ConnectionString=UseDevelopmentStorage=true  # Local Azurite connection string
+      - AzureBlobStorage__BlobServiceUrl=http://azurite:10000/devstoreaccount1  # Azurite blob service URL
+    ports:
+      - "5000:80"
+      - "5001:443"
+    depends_on:
+      - sqlserver
+      - azurite
+    entrypoint: ["dotnet", "DocumentManager.API.dll"]
+
+volumes:
+  sql_data:
+  azurite_data:

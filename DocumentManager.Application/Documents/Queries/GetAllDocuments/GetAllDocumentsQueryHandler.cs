@@ -1,22 +1,32 @@
-﻿using DocumentManager.Domain.Entities;
-using DocumentManager.Domain.Interfaces;
-using MediatR;
+﻿using Dapper;
+using DocumentManager.Application.Abstractions.Messaging;
 
+using System.Data;
 
 namespace DocumentManager.Application.Documents.Queries.GetAllDocuments;
 
-public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery, IEnumerable<Document>>
+internal sealed class GetAllDocumentsQueryHandler : IQueryHandler<GetAllDocumentsQuery, IEnumerable<DocumentResponse>>
 {
-    private readonly IDocumentRepository _documentRepository;
+    private readonly IDbConnection _dbConnection;
+    public GetAllDocumentsQueryHandler(IDbConnection dbConnection) => _dbConnection = dbConnection;
 
-    public GetAllDocumentsQueryHandler(IDocumentRepository documentRepository)
+    public async Task<IEnumerable<DocumentResponse>> Handle(GetAllDocumentsQuery request, CancellationToken cancellationToken)
     {
-        _documentRepository = documentRepository;
-    }
 
-    public async Task<IEnumerable<Document>> Handle(GetAllDocumentsQuery request, CancellationToken cancellationToken)
-    {
-        // Retrieve all documents
-        return await _documentRepository.GetAllAsync();
+        var sql = $@"
+            SELECT 
+                d.{nameof(DocumentResponse.Id)}, 
+                d.{nameof(DocumentResponse.Name)}, 
+                d.{nameof(DocumentResponse.Size)}, 
+                d.{nameof(DocumentResponse.StoragePath)}, 
+                d.{nameof(DocumentResponse.OwnerId)}, 
+                d.{nameof(DocumentResponse.OrganizationId)}  
+            FROM Documents d
+            JOIN Users u ON u.OrganizationId = d.OrganizationId
+            WHERE u.Id = @UserId OR d.OwnerId = @UserId";
+
+        var documents = await _dbConnection.QueryAsync<DocumentResponse>(sql, new { request.UserId });
+
+        return documents;
     }
 }
