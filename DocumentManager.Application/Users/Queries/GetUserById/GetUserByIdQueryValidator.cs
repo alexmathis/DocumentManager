@@ -9,7 +9,7 @@ public sealed class GetUserByIdQueryValidator : AbstractValidator<GetUserByIdQue
         RuleFor(x => x.Id)
             .GreaterThan(0).WithMessage("User ID must be a positive integer.");
 
-        RuleFor(x => x.RequstingUserId)
+        RuleFor(x => x.RequestingUserId)
             .GreaterThan(0).WithMessage("Requesting user ID must be a positive integer.");
     }
 }

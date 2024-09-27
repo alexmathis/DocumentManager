@@ -21,7 +21,7 @@ internal sealed class GetUserByIdQueryHandler : IQueryHandler<GetUserByIdQuery, 
             JOIN Users requestingUser ON requestingUser.Id = @RequestingUserId
             WHERE u.Id = @Id AND u.OrganizationId = requestingUser.OrganizationId";
 
-        var user = await _dbConnection.QueryFirstOrDefaultAsync<UserResponse>(sql, new { request.Id, request.RequstingUserId });
+        var user = await _dbConnection.QueryFirstOrDefaultAsync<UserResponse>(sql, new { request.Id, request.RequestingUserId });
 
         if (user is null)
         {
